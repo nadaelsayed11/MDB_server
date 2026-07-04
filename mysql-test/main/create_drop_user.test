@@ -68,6 +68,19 @@ SELECT db,table_name FROM mysql.tables_priv WHERE user='u3';
 DROP TABLE test.t1;
 DROP USER u3@localhost;
 
+# MDEV-37214 follow-up: CREATE OR REPLACE USER with no IDENTIFIED clause must
+# not lose/expire the existing password_last_changed. Since the OR REPLACE
+# path now UPDATEs the existing mysql.user/global_priv row in place (instead
+# of DROP+recreate), password_last_changed must be explicitly carried over
+# when auth isn't being changed, otherwise a restored/replaced account can
+# read back with password_last_changed unset, which is indistinguishable
+# from "manually expired".
+CREATE USER u3@localhost IDENTIFIED BY 'pw1';
+SELECT password_expired FROM mysql.user WHERE user='u3';
+CREATE OR REPLACE USER u3@localhost;
+SELECT password_expired FROM mysql.user WHERE user='u3';
+DROP USER u3@localhost;
+
 # Failed OR REPLACE must not touch privileges either (all-or-nothing per account).
 CREATE USER u3@localhost IDENTIFIED BY 'pw1';
 GRANT SELECT ON test.* TO u3@localhost;

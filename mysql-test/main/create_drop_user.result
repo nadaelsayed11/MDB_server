@@ -69,6 +69,15 @@ db	table_name
 DROP TABLE test.t1;
 DROP USER u3@localhost;
 CREATE USER u3@localhost IDENTIFIED BY 'pw1';
+SELECT password_expired FROM mysql.user WHERE user='u3';
+password_expired
+N
+CREATE OR REPLACE USER u3@localhost;
+SELECT password_expired FROM mysql.user WHERE user='u3';
+password_expired
+N
+DROP USER u3@localhost;
+CREATE USER u3@localhost IDENTIFIED BY 'pw1';
 GRANT SELECT ON test.* TO u3@localhost;
 CREATE TABLE test.t1 (id INT);
 GRANT SELECT ON test.t1 TO u3@localhost;

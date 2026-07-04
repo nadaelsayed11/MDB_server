@@ -5007,7 +5007,15 @@ static int replace_user_table(THD *thd, const User_table &user_table,
     if (lex->account_options.account_locked != ACCOUNTLOCK_UNSPECIFIED)
       user_table.set_account_locked(new_acl_user.account_locked);
 
-    if (nauth)
+    if (nauth || (or_replace && old_row_exists))
+      /*
+        Even when OR REPLACE doesn't specify new auth (nauth == 0), the
+        on-disk row is being freshly rewritten from the in-memory
+        new_acl_user (which carries over the old password_last_changed).
+        Persist it explicitly so it isn't lost or read back as the
+        "manually expired" sentinel (0) if it's absent from the row we
+        just read off disk -- see MDEV-37214 follow-up.
+      */
       user_table.set_password_last_changed(new_acl_user.password_last_changed);
     if (lex->account_options.password_expire != PASSWORD_EXPIRE_UNSPECIFIED)
     {
